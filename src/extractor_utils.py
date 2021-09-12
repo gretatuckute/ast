@@ -90,7 +90,7 @@ class SaveOutput:
 
 			if k.startswith('Linear'):
 				if k.startswith('Linear(in_features=3072, out_features=768, bias=True)'): # only extract from the last part of the transformer block
-					detached_activations[k] = np.mean(activations, axis=1)
+					detached_activations[k] = np.mean(activations, axis=1).squeeze()
 		
 		self.detached_activations = detached_activations
 		

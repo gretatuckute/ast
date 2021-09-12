@@ -16,16 +16,17 @@ DATADIR = '/Users/gt/Documents/GitHub/aud-dnn/data/stimuli/165_natural_sounds_16
 run_only_missing_files = True
 
 files = [f for f in os.listdir(DATADIR) if os.path.isfile(os.path.join(DATADIR, f))]
-wav_files = [f for f in files if f.endswith('wav')]
+wav_files_identifiers = [f for f in files if f.endswith('wav')]
+wav_files_paths = [DATADIR + f for f in wav_files_identifiers]
 
 if run_only_missing_files:
 	# if only running remaining files:
 	# Get identifier (sound file name)
-	identifiers = [f.split('/')[-1].split('.')[0] for f in wav_files]
+	identifiers = [f.split('/')[-1].split('.')[0] for f in wav_files_identifiers]
 	identifier_pkls = [f'{f}_activations.pkl' for f in identifiers]
 	existing_actv = [f for f in os.listdir(RESULTDIR) if os.path.isfile(os.path.join(RESULTDIR, f))]
 	set_files = set(identifier_pkls) - set(existing_actv)
-	wav_files = [DATADIR + f.split('_activations')[0] + '.wav' for f in set_files]
+	wav_files_paths = [DATADIR + f.split('_activations')[0] + '.wav' for f in set_files]
 
 def make_features(wav_name, mel_bins, target_length=1024):
 	"""Copied over from inference.py
@@ -65,7 +66,7 @@ input_tdim = 1024  # audioset default
 model = ASTModel(label_dim=label_dim, input_tdim=input_tdim, imagenet_pretrain=True, audioset_pretrain=True)
 
 ### LOOP OVER AUDIO FILES ###
-for filename in tqdm(wav_files):
+for filename in tqdm(wav_files_paths):
 	
 	input = make_features(filename, mel_bins=128, target_length=1024)
 	# add a batch dim
@@ -99,7 +100,7 @@ for filename in tqdm(wav_files):
 	detached_activations = save_output.detach_activations()
 	
 	# Add the output features
-	detached_activations['Final'] = output.detach().numpy() # this is the same as the very last linear layer, ie. Linear in=768 and out=527
+	detached_activations['Final'] = output.detach().numpy().squeeze() # this is the same as the very last linear layer, ie. Linear in=768 and out=527
 	
 	# plt.plot(detached_activations['Linear(in_features=3072, out_features=768, bias=True)--7'])
 	# plt.show()
