@@ -1,10 +1,4 @@
-# -*- coding: utf-8 -*-
-# @Time    : 6/24/21 12:50 AM
-# @Author  : Yuan Gong
-# @Affiliation  : Massachusetts Institute of Technology
-# @Email   : yuangong@mit.edu
-# @File    : demo.py
-
+from tqdm import tqdm
 import os
 import torch
 import numpy as np
@@ -15,6 +9,7 @@ import matplotlib.pyplot as plt
 # import extractor hook functions
 from extractor_utils import SaveOutput
 
+## SETTINGS ##
 RESULTDIR = '/Users/gt/Documents/GitHub/aud-dnn/aud_dnn/model-actv/AST/'
 DATADIR = '/Users/gt/Documents/GitHub/aud-dnn/data/stimuli/165_natural_sounds_16kHz/'
 
@@ -29,8 +24,8 @@ if run_only_missing_files:
 	identifiers = [f.split('/')[-1].split('.')[0] for f in wav_files]
 	identifier_pkls = [f'{f}_activations.pkl' for f in identifiers]
 	existing_actv = [f for f in os.listdir(RESULTDIR) if os.path.isfile(os.path.join(RESULTDIR, f))]
-	wav_files = set(identifier_pkls) - set(existing_actv)
-
+	set_files = set(identifier_pkls) - set(existing_actv)
+	wav_files = [DATADIR + f.split('_activations')[0] + '.wav' for f in set_files]
 
 def make_features(wav_name, mel_bins, target_length=1024):
 	"""Copied over from inference.py
@@ -58,33 +53,23 @@ def make_features(wav_name, mel_bins, target_length=1024):
 	
 	return fbank
 
-
-## SETTINGS ##
-rand_test = False
-wav_name = '/Users/gt/Documents/GitHub/aud-dnn/data/stimuli/165_natural_sounds_16kHz/stim5_alarm_clock.wav'
-
 # download pretrained model in this directory
 os.environ['TORCH_HOME'] = '../pretrained_models'
 
 # assume each input spectrogram has 100 time frames
 # assume the task has 527 classes
 label_dim = 527
+input_tdim = 1024  # audioset default
 
-if rand_test:
-	input_tdim = 100
-	# create a pseudo input: a batch of 10 spectrogram, each with 100 time frames and 128 frequency bins
-	test_input = torch.rand([10, input_tdim, 128])
-else:
-	input_tdim = 1024 # audioset default
-	test_input = make_features(wav_name, mel_bins=128, target_length=1024)
-	# add a batch dim
-	test_input = test_input[None, :, :]
-	
 # Load the pretrained AST model
 model = ASTModel(label_dim=label_dim, input_tdim=input_tdim, imagenet_pretrain=True, audioset_pretrain=True)
 
 ### LOOP OVER AUDIO FILES ###
-for filename in wav_files:
+for filename in tqdm(wav_files):
+	
+	input = make_features(filename, mel_bins=128, target_length=1024)
+	# add a batch dim
+	input = input[None, :, :]
 
 	# put model in eval mode:
 	model.eval()
@@ -107,14 +92,14 @@ for filename in wav_files:
 			hook_handles.append(handle)
 	
 	
-	test_output = model(test_input)
-	# output should be in shape [10, 527], i.e., 10 samples, each with prediction of 527 classes.
-	# print(test_output.shape)
+	output = model(input)
+	# output should be in shape [1, 527], i.e., 10 samples, each with prediction of 527 classes.
+	# print(output.shape)
 	
 	detached_activations = save_output.detach_activations()
 	
 	# Add the output features
-	detached_activations['Final'] = test_output.detach().numpy() # this is the same as the very last linear layer, ie. Linear in=768 and out=527
+	detached_activations['Final'] = output.detach().numpy() # this is the same as the very last linear layer, ie. Linear in=768 and out=527
 	
 	# plt.plot(detached_activations['Linear(in_features=3072, out_features=768, bias=True)--7'])
 	# plt.show()
