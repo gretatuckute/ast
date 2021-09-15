@@ -5,15 +5,22 @@ import numpy as np
 from models import ASTModel
 import torchaudio
 import matplotlib.pyplot as plt
-
+import pickle
 # import extractor hook functions
 from extractor_utils import SaveOutput
+import random
 
 ## SETTINGS ##
 RESULTDIR = '/Users/gt/Documents/GitHub/aud-dnn/aud_dnn/model-actv/AST/'
 DATADIR = '/Users/gt/Documents/GitHub/aud-dnn/data/stimuli/165_natural_sounds_16kHz/'
 
-run_only_missing_files = True
+np.random.seed(0)
+random.seed(0)
+torch.manual_seed(0)
+torch.cuda.manual_seed(0)
+
+run_only_missing_files = False
+rand_netw = True
 
 files = [f for f in os.listdir(DATADIR) if os.path.isfile(os.path.join(DATADIR, f))]
 wav_files_identifiers = [f for f in files if f.endswith('wav')]
@@ -65,6 +72,33 @@ input_tdim = 1024  # audioset default
 # Load the pretrained AST model
 model = ASTModel(label_dim=label_dim, input_tdim=input_tdim, imagenet_pretrain=True, audioset_pretrain=True)
 
+if rand_netw:
+	state_dict = model.state_dict()
+	state_dict_rand = {}
+	print('OBS! RANDOM NETWORK!')
+
+	## The following code was used to generate indices for random permutation ##
+	# d_rand_idx = {}  # create dict for storing the indices for random permutation
+	# for k, v in state_dict.items():
+	# 	w = state_dict[k]
+	# 	idx = torch.randperm(w.nelement())  # create random indices across all dimensions
+	# 	d_rand_idx[k] = idx
+	#
+	# with open(os.path.join(os.getcwd(), 'AST_randnetw_indices.pkl'), 'wb') as f:
+	# 	pickle.dump(d_rand_idx, f)
+	
+	d_rand_idx = pickle.load(open(os.path.join(os.getcwd(), 'AST_randnetw_indices.pkl'), 'rb'))
+	
+	for k, v in state_dict.items():
+		w = state_dict[k]
+		# Load random indices
+		print(f'________ Loading random indices from permuted architecture for {k} ________')
+		idx = d_rand_idx[k]
+		rand_w = w.view(-1)[idx].view(w.size())  # permute using the stored indices, and reshape back to original shape
+		state_dict_rand[k] = rand_w
+
+	model.load_state_dict(state_dict_rand)
+
 ### LOOP OVER AUDIO FILES ###
 for filename in tqdm(wav_files_paths):
 	
@@ -76,7 +110,7 @@ for filename in tqdm(wav_files_paths):
 	model.eval()
 	
 	# Write hooks for the model
-	save_output = SaveOutput()
+	save_output = SaveOutput(rand_netw=rand_netw)
 	
 	hook_handles = []
 	layer_names = []

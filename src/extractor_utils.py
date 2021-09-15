@@ -7,11 +7,12 @@ import matplotlib.pyplot as plt
 
 
 class SaveOutput:
-	def __init__(self, avg_type='avg'):
+	def __init__(self, avg_type='avg', rand_netw=False):
 		self.outputs = []
 		self.activations = {}  # create a dict with module name
 		self.detached_activations = None
 		self.avg_type = avg_type
+		self.rand_netw = rand_netw
 	
 	def __call__(self, module, module_in, module_out):
 		"""
@@ -102,8 +103,10 @@ class SaveOutput:
 		if not (Path(RESULTDIR)).exists():
 			os.makedirs((Path(RESULTDIR)))
 		
-		# filename = os.path.join(RESULTDIR, f'{identifier}_activations_randnetw.pkl')
-		filename = os.path.join(RESULTDIR, f'{identifier}_activations.pkl')
+		if self.rand_netw:
+			filename = os.path.join(RESULTDIR, f'{identifier}_activations_randnetw.pkl')
+		else:
+			filename = os.path.join(RESULTDIR, f'{identifier}_activations.pkl')
 		
 		with open(filename, 'wb') as f:
 			pickle.dump(self.detached_activations, f)
