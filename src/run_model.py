@@ -20,7 +20,7 @@ torch.manual_seed(0)
 torch.cuda.manual_seed(0)
 
 run_only_missing_files = False
-rand_netw = True
+rand_netw = False
 
 files = [f for f in os.listdir(DATADIR) if os.path.isfile(os.path.join(DATADIR, f))]
 wav_files_identifiers = [f for f in files if f.endswith('wav')]
@@ -30,7 +30,10 @@ if run_only_missing_files:
 	# if only running remaining files:
 	# Get identifier (sound file name)
 	identifiers = [f.split('/')[-1].split('.')[0] for f in wav_files_identifiers]
-	identifier_pkls = [f'{f}_activations.pkl' for f in identifiers]
+	if rand_netw:
+		identifier_pkls = [f'{f}_activations_randnetw.pkl' for f in identifiers]
+	else:
+		identifier_pkls = [f'{f}_activations.pkl' for f in identifiers]
 	existing_actv = [f for f in os.listdir(RESULTDIR) if os.path.isfile(os.path.join(RESULTDIR, f))]
 	set_files = set(identifier_pkls) - set(existing_actv)
 	wav_files_paths = [DATADIR + f.split('_activations')[0] + '.wav' for f in set_files]
@@ -144,4 +147,4 @@ for filename in tqdm(wav_files_paths):
 	id1 = filename.split('/')[-1]
 	identifier = id1.split('.')[0]
 	
-	save_output.store_activations(RESULTDIR=RESULTDIR, identifier=identifier)
+	# save_output.store_activations(RESULTDIR=RESULTDIR, identifier=identifier)
