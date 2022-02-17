@@ -11,7 +11,7 @@
  - [Contact](#Contact)
 
 ## Model activation extraction
-To extract activations from multiple sound files, use run_model.py. 
+To extract activations from multiple sound files, use src/run_model.py. 
 
 To run random network: In the run_model.py script, it is possible to generate randomly permuted tensors for the AST architecture (line 83). Set the variable rand_netw to True in the beginning of the script. The permuted architecture will be loaded in lines 95-103 and activations saved with an appended "_randnetw".
 
