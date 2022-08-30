@@ -57,7 +57,7 @@ def make_features(wav_name, mel_bins, target_length=1024):
 	elif p < 0:
 		fbank = fbank[0:target_length, :]
 	
-	fbank = (fbank - (-4.2677393)) / (4.5689974 * 2)
+	fbank = (fbank - (-4.2677393)) / (4.5689974 * 2) 
 	
 	# plt.imshow(fbank, interpolation=None)
 	# plt.show()
@@ -103,18 +103,25 @@ if rand_netw:
 	model.load_state_dict(state_dict_rand)
 
 ### LOOP OVER AUDIO FILES ###
+lst_mean = []
+lst_std = []
 for filename in tqdm(wav_files_paths):
 	
 	input = make_features(filename, mel_bins=128, target_length=1024)
+	lst_mean.append(input)
+
+# print('\n\n\n')
+# np.mean([x.mean(axis=0).detach().numpy() for x in lst_mean])
+	
 	# add a batch dim
 	input = input[None, :, :]
 
 	# put model in eval mode:
 	model.eval()
-	
+
 	# Write hooks for the model
 	save_output = SaveOutput(rand_netw=rand_netw)
-	
+
 	hook_handles = []
 	layer_names = []
 	for idx, layer in enumerate(model.modules()):
@@ -128,23 +135,23 @@ for filename in tqdm(wav_files_paths):
 			# print('Fetching Linear handles!\n')
 			handle = layer.register_forward_hook(save_output)
 			hook_handles.append(handle)
-	
-	
+
+
 	output = model(input)
 	# output should be in shape [1, 527], i.e., 10 samples, each with prediction of 527 classes.
 	# print(output.shape)
-	
+
 	detached_activations = save_output.detach_activations()
-	
+
 	# Add the output features
 	detached_activations['Final'] = output.detach().numpy().squeeze() # this is the same as the very last linear layer, ie. Linear in=768 and out=527
-	
+
 	# plt.plot(detached_activations['Linear(in_features=3072, out_features=768, bias=True)--7'])
 	# plt.show()
-	
+
 	# Store and save activations
 	# Get identifier (sound file name)
 	id1 = filename.split('/')[-1]
 	identifier = id1.split('.')[0]
-	
+
 	# save_output.store_activations(RESULTDIR=RESULTDIR, identifier=identifier)
