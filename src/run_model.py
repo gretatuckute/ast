@@ -20,15 +20,17 @@ torch.manual_seed(0)
 torch.cuda.manual_seed(0)
 
 get_sound_stats = False # compute mean and std of the dataset of interest (165 sounds)
-run_only_missing_files = False
+run_only_missing_files = True
 rand_netw = False # if True, run the model with permuted weights
-sound_level_check = 0.1 # If not None, multiply the raw sound by this value to check model activations
+sound_level_check = 10 # If not None, multiply the raw sound by this value to check model activations
 
 # If sound_level_check is not None, append SL{sound_level_check} to the resultdir
 if sound_level_check is not None:
 	# If period in the sound level, drop it
 	if '.' in str(sound_level_check):
 		sound_level_check_str = str(sound_level_check).replace('.', '')
+	else:
+		sound_level_check_str = str(sound_level_check)
 	RESULTDIR = RESULTDIR + f'SL{sound_level_check_str}'
 
 if not os.path.exists(RESULTDIR):
