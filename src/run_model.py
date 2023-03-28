@@ -11,8 +11,8 @@ from extractor_utils import SaveOutput
 import random
 
 ## SETTINGS ##
-RESULTDIR = '/Users/gt/Documents/GitHub/aud-dnn/aud_dnn/model-actv/AST'
-DATADIR = '/Users/gt/Documents/GitHub/aud-dnn/data/stimuli/165_natural_sounds_16kHz/'
+RESULTDIR = '/Users/gt/Documents/GitHub/aud-dnn/aud_dnn/model-actv/AST_SL01-from-datadir/'
+DATADIR = '/Users/gt/Documents/GitHub/aud-dnn/data/stimuli/165_natural_sounds_16kHz_SL01/'
 
 np.random.seed(0)
 random.seed(0)
@@ -22,7 +22,7 @@ torch.cuda.manual_seed(0)
 get_sound_stats = False # compute mean and std of the dataset of interest (165 sounds)
 run_only_missing_files = True
 rand_netw = False # if True, run the model with permuted weights
-sound_level_check = 10 # If not None, multiply the raw sound by this value to check model activations
+sound_level_check = None # If not None, multiply the raw sound by this value to check model activations
 
 # If sound_level_check is not None, append SL{sound_level_check} to the resultdir
 if sound_level_check is not None:
