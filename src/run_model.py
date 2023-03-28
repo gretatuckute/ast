@@ -11,9 +11,7 @@ from extractor_utils import SaveOutput
 import random
 
 ## SETTINGS ##
-RESULTDIR = '/Users/gt/Documents/GitHub/aud-dnn/aud_dnn/model-actv/AST/'
-if not os.path.exists(RESULTDIR):
-	os.makedirs(RESULTDIR)
+RESULTDIR = '/Users/gt/Documents/GitHub/aud-dnn/aud_dnn/model-actv/AST'
 DATADIR = '/Users/gt/Documents/GitHub/aud-dnn/data/stimuli/165_natural_sounds_16kHz/'
 
 np.random.seed(0)
@@ -22,8 +20,19 @@ torch.manual_seed(0)
 torch.cuda.manual_seed(0)
 
 get_sound_stats = False # compute mean and std of the dataset of interest (165 sounds)
-run_only_missing_files = True
-rand_netw = True # if True, run the model with permuted weights
+run_only_missing_files = False
+rand_netw = False # if True, run the model with permuted weights
+sound_level_check = 0.1 # If not None, multiply the raw sound by this value to check model activations
+
+# If sound_level_check is not None, append SL{sound_level_check} to the resultdir
+if sound_level_check is not None:
+	# If period in the sound level, drop it
+	if '.' in str(sound_level_check):
+		sound_level_check_str = str(sound_level_check).replace('.', '')
+	RESULTDIR = RESULTDIR + f'SL{sound_level_check_str}'
+
+if not os.path.exists(RESULTDIR):
+	os.makedirs(RESULTDIR)
 
 files = [f for f in os.listdir(DATADIR) if os.path.isfile(os.path.join(DATADIR, f))]
 wav_files_identifiers = [f for f in files if f.endswith('wav')]
@@ -44,10 +53,16 @@ if run_only_missing_files:
 
 
 
-def make_features(wav_name, mel_bins, target_length=1024):
+def make_features(wav_name, mel_bins, target_length=1024, sound_level_check=None):
 	"""Copied over from inference.py
-	Looks to be based on the audioset model given the normalization -4 and 4"""
+	Looks to be based on the audioset model given the normalization -4 and 4
+	If sound_level_check is not None, multiply the raw sound by this value to check model activations
+	"""
 	waveform, sr = torchaudio.load(wav_name)
+
+	if sound_level_check is not None:
+		# Multiply tensor by sound_level_check
+		waveform = torch.mul(waveform, sound_level_check) # same as waveform2 = waveform * sound_level_check
 	
 	fbank = torchaudio.compliance.kaldi.fbank(
 		waveform, htk_compat=True, sample_frequency=sr, use_energy=False,
@@ -71,7 +86,7 @@ def make_features(wav_name, mel_bins, target_length=1024):
 	return fbank
 
 
-def get_sound_stats(wav_name, mel_bins, target_length=1024, new_rms=None, new_rms_scale=None):
+def get_sound_stats_func(wav_name, mel_bins, target_length=1024, new_rms=None, new_rms_scale=None):
 	"""Copy of make_features
 
 	If new_rms is not None, then the sound is scaled to have the new_rms amplitude.
@@ -154,7 +169,7 @@ def ch_rms(x, dim=-1):
 if get_sound_stats:
 	lst_fbanks = []
 	for wav_file in tqdm(wav_files_paths):
-		fbank = get_sound_stats(wav_name=wav_file,
+		fbank = get_sound_stats_func(wav_name=wav_file,
 								mel_bins=128,
 								target_length=1024,
 								new_rms=None,
@@ -221,8 +236,8 @@ if rand_netw:
 
 ### LOOP OVER AUDIO FILES ###
 for filename in tqdm(wav_files_paths):
-	
-	input = make_features(filename, mel_bins=128, target_length=1024)
+
+	input = make_features(filename, mel_bins=128, target_length=1024, sound_level_check=sound_level_check)
 
 	# add a batch dim
 	input = input[None, :, :]
