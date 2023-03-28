@@ -11,8 +11,8 @@ from extractor_utils import SaveOutput
 import random
 
 ## SETTINGS ##
-RESULTDIR = '/Users/gt/Documents/GitHub/aud-dnn/aud_dnn/model-actv/AST_SL01-from-datadir/'
-DATADIR = '/Users/gt/Documents/GitHub/aud-dnn/data/stimuli/165_natural_sounds_16kHz_SL01/'
+RESULTDIR = '/Users/gt/Documents/GitHub/aud-dnn/aud_dnn/model-actv/AST'
+DATADIR = '/Users/gt/Documents/GitHub/aud-dnn/data/stimuli/165_natural_sounds_16kHz/'
 
 np.random.seed(0)
 random.seed(0)
